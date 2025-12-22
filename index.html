@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Chess WASM</title>
+    <link rel="icon" href="data:;base64,=" />
+  </head>
+  <body>
+    <div id="root">loading…</div>
+
+    <!-- 1) cpp.js runtime (must load before your app) -->
+    <script src="./dist/web.browser.js"></script>
+    <script>
+        window.__cppReady ??= window.initCppJs({ path: "./dist" });
+    </script>
+
+    <!-- 2) React + ReactDOM (UMD dev builds) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- 3) Babel (to compile JSX in the browser — dev only) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 4) Your JSX app -->
+    <!-- <script type="text/babel" data-presets="react" src="./app.jsx"></script> -->
+
+    <script type="module" src="main.jsx"></script>
+  </body>
+</html>

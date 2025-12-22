@@ -1,0 +1,2 @@
+/emsdk/upstream/emscripten/emar qc libweb.a CMakeFiles/web.dir/tmp/cppjs/live/.cppjs/build/bridge/wasm_api.i.cpp.o CMakeFiles/web.dir/commonBridges.cpp.o
+/emsdk/upstream/emscripten/emranlib libweb.a

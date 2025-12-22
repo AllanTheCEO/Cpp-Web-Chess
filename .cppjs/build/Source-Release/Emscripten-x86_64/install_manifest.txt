@@ -1,0 +1,3 @@
+/tmp/cppjs/live/.cppjs/build/Source-Release/prebuilt/Emscripten-x86_64/lib/libweb.a
+/tmp/cppjs/live/.cppjs/build/Source-Release/prebuilt/Emscripten-x86_64/lib/libweb.a
+/tmp/cppjs/live/.cppjs/build/Source-Release/prebuilt/Emscripten-x86_64/include/wasm_api.h

@@ -1,0 +1,2 @@
+/emsdk/upstream/emscripten/emar qc libweb.a CMakeFiles/web.dir/cppjsEmptySource.cpp.o CMakeFiles/web.dir/tmp/cppjs/live/src/native/wasm_api.cpp.o
+/emsdk/upstream/emscripten/emranlib libweb.a

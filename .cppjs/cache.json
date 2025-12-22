@@ -1,0 +1,12 @@
+{
+    "hashes": {
+        "C:/Users/allan/OneDrive/Documents/NewCppChess/web/src/native/wasm_api.h": "81c741ce31c84adc8ebb4983b8de7509bd4179c6c342a892a1dd4d854d863ddc",
+        "C:/Users/allan/OneDrive/Documents/NewCppChess/web/.cppjs/build/interface/wasm_api.i": "abbf206661bb5327e7335bf7ca2770cca94e6e163b79930a989270cc814829d0"
+    },
+    "interfaces": {
+        "C:/Users/allan/OneDrive/Documents/NewCppChess/web/src/native/wasm_api.h": "C:/Users/allan/OneDrive/Documents/NewCppChess/web/.cppjs/build/interface/wasm_api.i"
+    },
+    "bridges": {
+        "C:/Users/allan/OneDrive/Documents/NewCppChess/web/.cppjs/build/interface/wasm_api.i": "C:/Users/allan/OneDrive/Documents/NewCppChess/web/.cppjs/build/bridge/wasm_api.i.cpp"
+    }
+}
