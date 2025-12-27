@@ -145,6 +145,10 @@ struct King : public ChessPiece {
         this->col = endColumn;
         this->hasCastlingRights = false;
     }
+
+    virtual int getValue() {
+        return 0;
+    }
 };
 
 struct Rook : public ChessPiece {
@@ -315,6 +319,10 @@ struct Empty : public ChessPiece {
         return false;
     }
 
+    int getValue() {
+        return 0;
+    }
+
 };
 
 class Board {
@@ -346,6 +354,42 @@ class Board {
         //Constructor for new board with fen string
         Board(std::string) {
 
+        }
+
+        //Deep copy constructor
+        Board(const Board& other) {
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    // Deep copy each piece
+                    if (other.board[i][j]->piece == PAWN) {
+                        board[i][j] = new Pawn(*dynamic_cast<Pawn*>(other.board[i][j]));
+                    } else if (other.board[i][j]->piece == KNIGHT) {
+                        board[i][j] = new Knight(*dynamic_cast<Knight*>(other.board[i][j]));
+                    } else if (other.board[i][j]->piece == BISHOP) {
+                        board[i][j] = new Bishop(*dynamic_cast<Bishop*>(other.board[i][j]));
+                    } else if (other.board[i][j]->piece == ROOK) {
+                        board[i][j] = new Rook(*dynamic_cast<Rook*>(other.board[i][j]));
+                    } else if (other.board[i][j]->piece == QUEEN) {
+                        board[i][j] = new Queen(*dynamic_cast<Queen*>(other.board[i][j]));
+                    } else if (other.board[i][j]->piece == KING) {
+                        board[i][j] = new King(*dynamic_cast<King*>(other.board[i][j]));
+                    } else {
+                        board[i][j] = new Empty();
+                    }
+                }
+            }
+            isGameOver = other.isGameOver;
+            isGameDraw = other.isGameDraw;
+            isWhiteTurn = other.isWhiteTurn;
+            whiteKingisCheckmated = other.whiteKingisCheckmated;
+            blackKingisCheckmated = other.blackKingisCheckmated;
+            isStalemate = other.isStalemate;
+            positionCount = other.positionCount;
+            half_move_count = other.half_move_count;
+            full_move_count = other.full_move_count;
+            gameOverMessage = other.gameOverMessage;
+            whiteCapturedPieces = other.whiteCapturedPieces;
+            blackCapturedPieces = other.blackCapturedPieces;
         }
 
         ~Board() {
@@ -1002,6 +1046,37 @@ class Board {
             }
         }
 
+        std::vector<std::string> getLegalMoves(Color color) {
+            std::vector<std::string> legalMoves;
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (board[i][j]->color == color) {
+                        for (int k = 0; k < 8; k++) {
+                            for (int l = 0; l < 8; l++) {
+                                if (isLegalMove(i, j, k, l)) {
+                                    legalMoves.push_back(std::to_string(i) + std::to_string(j)
+                                     + std::to_string(k) + std::to_string(l));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return legalMoves;
+        }
+
+        uint64_t convertBoardtoBitboard() {
+            uint64_t bitboard = 0;
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (board[i][j]->piece != EMPTY) {
+                        int position = i * 8 + j;
+                        bitboard |= (1ULL << position);
+                    }
+                }
+            }
+            return bitboard;
+        }
 
         bool isLegalMoveExceptPinned(int pieceRow, int pieceCol, int endRow, int endColumn) {
             ChessPiece* Piece = board[pieceRow][pieceCol];
