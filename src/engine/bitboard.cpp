@@ -1,4 +1,5 @@
 #include "board.cpp"
+#include <cstdint>
 
 class BitBoard {
     public:

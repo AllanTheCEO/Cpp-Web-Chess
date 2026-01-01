@@ -2,8 +2,20 @@
 #include "doctest.h"
 #include "src/engine/board.cpp"
 
-
-
+TEST_CASE("Get legal moves 1") {
+    Board chessBoard;
+    for(int row = 0; row < 8; row++) {
+        for(int col = 0; col < 8; col++) {
+            chessBoard.board[row][col] = new Empty(EMPTY, None, row, col);
+        }
+    }  
+    chessBoard.board[0][0] = new Rook(ROOK, White, 0, 0);
+    auto result = chessBoard.getLegalMoves(White);
+    for (const std::string& move : result) {
+         std::cout << move << std::endl;
+    }
+    
+}
 
 TEST_CASE("Testing normal moves, is occupied, and inside board") {
     Board chessBoard;

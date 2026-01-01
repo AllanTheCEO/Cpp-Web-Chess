@@ -6,6 +6,7 @@
 #include <cmath>
 #include <functional>
 #include <sstream>
+#include <array>
 
 
 enum Piece {
@@ -180,6 +181,8 @@ struct Rook : public ChessPiece {
 
 struct Bishop : public ChessPiece {
     using ChessPiece::ChessPiece;
+
+
 
     bool isNormalMove(int endRow, int endColumn) {
         if (isdiagonal(endRow, endColumn)) {
@@ -374,7 +377,8 @@ class Board {
                     } else if (other.board[i][j]->piece == KING) {
                         board[i][j] = new King(*dynamic_cast<King*>(other.board[i][j]));
                     } else {
-                        board[i][j] = new Empty();
+                        board[i][j] = new Empty(EMPTY, None, i, j);
+                        board[i][j]->enPassantSquare = other.board[i][j]->enPassantSquare;
                     }
                 }
             }
@@ -393,7 +397,12 @@ class Board {
         }
 
         ~Board() {
-            
+            for (int r = 0; r < 8; r++) {
+                for (int c = 0; c < 8; c++) {
+                    delete board[r][c];
+                    board[r][c] = nullptr;
+                }
+            }  
         }
 
         void initializeBoard() {
@@ -752,11 +761,19 @@ class Board {
                 gameOverMessage = "White Checkmate";
             } else if(isStalemate) {
                 gameOverMessage = "Stalemate";
+                isGameDraw = true;
             } else if(positionCount[getPosition()] >= 3) {
                 gameOverMessage = "Draw by Threefold Repetition";
+                isGameDraw = true;
             } else if(half_move_count >= 100) {
                 gameOverMessage = "Draw by 50-Move Rule";
-            }
+                isGameDraw = true;
+            } 
+            // insufficient material placeholder
+            // else if (isInsufficientMaterial()) {
+            //     gameOverMessage = "Draw by Insufficient Material";
+            //     isGameDraw = true;
+            // }
         }
 
         std::string consumeGameOver() {
@@ -872,6 +889,11 @@ class Board {
                 default:
                     break;
             }
+
+            positionCount[getPosition()]++;
+            checkForCheckmate(White);
+            checkForCheckmate(Black);
+            checkForDraw();
         }
 
         
@@ -880,7 +902,7 @@ class Board {
             ChessPiece* king = board[kingRow][kingCol];
             ChessPiece* rook = board[rookRow][rookCol];
             
-            if(king->piece != KING && rook->piece != ROOK) {
+            if(king->piece != KING || rook->piece != ROOK) {
                 return;
             }
             if((king->color == White && isWhiteTurn == false) ||
@@ -916,6 +938,12 @@ class Board {
             struct Rook* rookPiece = static_cast<struct Rook*>(rook);
             kingPiece->hasCastlingRights = false;
             rookPiece->hasCastlingRights = false;
+
+            positionCount[getPosition()]++;
+            half_move_count++;
+            full_move_count++;
+            checkForCheckmate(king->color == White ? Black : White);
+            checkForDraw();
         }
 
         bool checkForLegalMoves(int pieceRow, int pieceCol, Color color) {
@@ -1046,37 +1074,66 @@ class Board {
             }
         }
 
-        std::vector<std::string> getLegalMoves(Color color) {
+        std::vector<std::string> getLegalMoves(Color c) {
             std::vector<std::string> legalMoves;
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    if (board[i][j]->color == color) {
+                    if (board[i][j]->color == c) {
                         for (int k = 0; k < 8; k++) {
                             for (int l = 0; l < 8; l++) {
                                 if (isLegalMove(i, j, k, l)) {
-                                    legalMoves.push_back(std::to_string(i) + std::to_string(j)
-                                     + std::to_string(k) + std::to_string(l));
+
+                                    std::string base = (std::to_string(i) + std::to_string(j)
+                                        + std::to_string(k) + std::to_string(l));
+                                    
+                                    bool isPawn = (board[i][j]->piece == PAWN);
+                                    bool promotes = (isPawn && ( (c == White && k == 7) || (c == Black && k == 0)));
+                                    if (!promotes) {
+                                        legalMoves.push_back(base);
+                                    } else {
+                                        legalMoves.push_back(base + "Q");
+                                        legalMoves.push_back(base + "R");
+                                        legalMoves.push_back(base + "B");
+                                        legalMoves.push_back(base + "N");
+                                    }
+
+
                                 }
                             }
                         }
                     }
                 }
             }
+            if (c == White) {
+                if (canCastle(0, 4, 0, 7)) {
+                    legalMoves.push_back("O-O-W");
+                }
+                if (canCastle(0, 4, 0, 0)) {
+                    legalMoves.push_back("O-O-O-W");
+                }
+            } else if (c == Black) {
+                if (canCastle(7, 4, 7, 7)) {
+                    legalMoves.push_back("O-O-B");
+                }
+                if (canCastle(7, 4, 7, 0)) {
+                    legalMoves.push_back("O-O-O-B");
+                }
+            }
             return legalMoves;
         }
 
-        uint64_t convertBoardtoBitboard() {
-            uint64_t bitboard = 0;
-            for (int i = 0; i < 8; i++) {
-                for (int j = 0; j < 8; j++) {
-                    if (board[i][j]->piece != EMPTY) {
-                        int position = i * 8 + j;
-                        bitboard |= (1ULL << position);
-                    }
-                }
-            }
-            return bitboard;
-        }
+        // uint64_t convertBoardtoBitboard() {
+        //     uint64_t bitboard = 0;
+        //     for (int i = 0; i < 8; i++) {
+        //         for (int j = 0; j < 8; j++) {
+        //             if (board[i][j]->piece != EMPTY) {
+        //                 int position = i * 8 + j;
+        //                 bitboard |= (1ULL << position);
+        //             }
+        //         }
+        //     }
+        //     return bitboard;
+        // }
 
         bool isLegalMoveExceptPinned(int pieceRow, int pieceCol, int endRow, int endColumn) {
             ChessPiece* Piece = board[pieceRow][pieceCol];
