@@ -944,6 +944,7 @@ class Board {
             half_move_count++;
             full_move_count++;
             checkForCheckmate(king->color == White ? Black : White);
+            removeEnpassant();
             checkForDraw();
         }
 
@@ -1179,10 +1180,23 @@ class Board {
             ChessPiece* originalStart = board[startRow][startCol];
 
             // Simulate move
+            //Handles edge case where pinned pawn can target enpassant square
+            bool isEnPassantCapture = (piece->piece == PAWN && captured->piece == EMPTY && captured->enPassantSquare);
+            int epRow = 0;
+            int epCol = 0;
+            ChessPiece* epCapturedPawn = nullptr;
+            if (isEnPassantCapture) {
+                epRow = (piece->color == White) ? (endRow - 1) : (endRow + 1);
+                epCol = endCol;
+                epCapturedPawn = board[epRow][epCol];
+                board[epRow][epCol] = new Empty(EMPTY, None, epRow, epCol);
+            }
             board[endRow][endCol] = piece;
             board[startRow][startCol] = new Empty(EMPTY, None, startRow, startCol);
             piece->row = endRow;
             piece->col = endCol;
+
+
 
             // Find own king
             King* king = nullptr;
@@ -1198,11 +1212,16 @@ class Board {
             bool inCheck = (king != nullptr) && isinCheck(king->row, king->col);
 
             // Restore board
-            delete board[startRow][startCol]; // prevent leak
+            delete board[startRow][startCol];
             board[startRow][startCol] = piece;
             board[endRow][endCol] = captured;
             piece->row = startRow;
             piece->col = startCol;
+
+            if (isEnPassantCapture) {
+                delete board[epRow][epCol];
+                board[epRow][epCol] = epCapturedPawn;
+            }
 
             return !inCheck; // true if the move does NOT leave king in check
         }
@@ -1309,8 +1328,7 @@ class Board {
             King* king = static_cast<King*>(kingPiece);
             Rook* rook = static_cast<Rook*>(rookPiece);
             if (king->hasCastlingRights && rook->hasCastlingRights
-            && /*!isinCheckSquare(king->color, king->row, rook->col) &&*/
-             notThroughCheck(kingRow, kingCol, rookRow, rookCol) && 
+            && notThroughCheck(kingRow, kingCol, rookRow, rookCol) && 
              isNotBlockedForCastle(kingRow, kingCol, rookRow, rookCol)) {
                 return true;
             }
