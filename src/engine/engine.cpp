@@ -119,16 +119,15 @@ class Engine {
             }
         }
 
-        std::tuple<double, std::string> minimax(Board b, int depth) {
+        std::tuple<double, std::string> minimax(Board b, int depth, double alpha, double beta) {
             if (b.isGameOver || depth == 0) {
                 return std::make_tuple(evaluateBoard(b), "");
             } 
 
-            double best = 0;
-            std::string move = "";
 
             if (b.isWhiteTurn) {
-                best = -1000;
+                double maxEval = -100000;
+                std::string move = "";
 
                 for (std::string m : b.getLegalMoves(White)) {
 
@@ -136,34 +135,47 @@ class Engine {
                     Board newBoard = b;
                     Board postMove = engineMove(newBoard, m, White);
                     
+                    auto result = minimax(postMove, depth - 1, alpha, beta);
 
-                    auto result = minimax(postMove, depth - 1);
-                    if (std::get<0>(result) > best) {
-                        best = std::get<0>(result);
+                    if (std::get<0>(result) > maxEval) {
+                        maxEval = std::get<0>(result);
                         move = m;
                     }
+                    alpha = std::max(alpha, maxEval);
+                    if (beta <= alpha){
+                        break;
+                    }
+
                 }
+                return std::make_tuple(maxEval, move);
+
             } else {
-                best = 1000;
+                double minEval = 100000;
+                std::string move = "";
 
                 for (std::string m : b.getLegalMoves(Black)) {
-
-
                     //deep copy board
                     Board newBoard = b;
                     Board postMove = engineMove(newBoard, m, Black);
 
-                    auto result = minimax(postMove, depth - 1);
-                    if (std::get<0>(result) < best) {
-                        best = std::get<0>(result);
+                    auto result = minimax(postMove, depth - 1, alpha, beta);
+
+                    if (std::get<0>(result) < minEval) {
+                        minEval = std::get<0>(result);
                         move = m;
                     }
-                }
-            }
+                    beta = std::min(beta, minEval);
+                    if (beta <= alpha){
+                        break;
+                    }
 
-            //b.printBoard();
-            return std::make_tuple(best, move);
+                }
+                return std::make_tuple(minEval, move);
+
+            }
         }
+
+
 
         Board engineMove(Board &b, std::string m, Color c) {
             if (c != White && c != Black) {
@@ -213,29 +225,37 @@ class Engine {
             }
             return b;
         }
+
+        //Tests engine correctness by counting all possible positions up to a certain depth
+        uint64_t perft(Board& b, Engine& e, int depth) {
+            if (depth == 0) return 1;
+
+            Color side = b.isWhiteTurn ? White : Black;
+            uint64_t nodes = 0;
+
+            for (const std::string& m : b.getLegalMoves(side)) {
+                Board newBoard = b; 
+                e.engineMove(newBoard, m, side); 
+                nodes += perft(newBoard, e, depth - 1);
+            }
+            return nodes;
+        }
+
+        uint64_t divide(Board& b, Engine& e, int depth) {
+            Color side = b.isWhiteTurn ? White : Black;
+            auto moves = b.getLegalMoves(side);
+
+            uint64_t nodes = 0;
+            for (const std::string& m : moves) {
+                Board child = b;
+                e.engineMove(child, m, side);
+                uint64_t n = perft(child, e, depth - 1);
+                std::cout << m << ": " << n << "\n";
+                nodes += n;
+            }
+            std::cout << "TOTAL: " << nodes << "\n";
+            return nodes;
+        }
 };
 
-int main() {
-    int depth = 2;
-    clock_t start = clock();
-    Board b = Board();
-    b.initializeBoard();
-    Engine engine = Engine();
-    std::tuple<double, std::string> result = engine.minimax(b, depth);
-    std::cout << "Best move: " << std::get<1>(result) << ", Best value: " << std::get<0>(result);
-    std::cout << std::endl;
-    engine.engineMove(b, std::get<1>(result), b.isWhiteTurn ? White : Black);
-    b.printBoard();
-
-    std::tuple<double, std::string> result2 = engine.minimax(b, depth);
-    std::cout << "Best move: " << std::get<1>(result2) << ", Best value: " << std::get<0>(result2);
-    std::cout << std::endl;
-    engine.engineMove(b, std::get<1>(result2), b.isWhiteTurn ? White : Black);
-    b.printBoard();
-    clock_t end = clock();
-    double elapsed_time = ((double)(end - start)) / CLOCKS_PER_SEC;
-    std::cout << "Execution time: " << elapsed_time << " seconds" << std::endl;
-
-    return 0;
-}
 

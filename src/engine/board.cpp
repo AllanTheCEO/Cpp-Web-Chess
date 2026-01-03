@@ -351,7 +351,11 @@ class Board {
         std::vector<char> blackCapturedPieces;
 
         Board() {
-
+            for (int r = 0; r < 8; ++r) {
+                for (int c = 0; c < 8; ++c) {
+                    board[r][c] = nullptr;
+                }
+            }
         }
 
         //Constructor for new board with fen string
@@ -399,8 +403,10 @@ class Board {
         ~Board() {
             for (int r = 0; r < 8; r++) {
                 for (int c = 0; c < 8; c++) {
-                    delete board[r][c];
-                    board[r][c] = nullptr;
+                    if (board[r][c]) {
+                        delete board[r][c];
+                        board[r][c] = nullptr;
+                    }
                 }
             }  
         }
@@ -794,20 +800,17 @@ class Board {
                (Piece->color == Black && isWhiteTurn == true)) {
                 return;
             }
-            bool isCapture = false;
-            if(target->color != Piece->color &&
-                 (target->piece != EMPTY || target->enPassantSquare == true)) {
-                isCapture = true;
-            }
+            bool isEnPassantCapture = (Piece->piece == PAWN && target->enPassantSquare);
+            bool isCapture =
+                (target->piece != EMPTY && target->color != Piece->color) ||
+                isEnPassantCapture;
             //logic for removing pawn upon enpassant capture
-            if(target->enPassantSquare == true){
-                if (Piece->color == White) {
-                    delete board[4][target->col];
-                    board[4][target->col] = new Empty(EMPTY, None, 4, target->col);
-                } else if (Piece->color == Black) {
-                    delete board[3][target->col];
-                    board[3][target->col] = new Empty(EMPTY, None, 3, target->col);
-                }
+            if (isEnPassantCapture) {
+                int capRow = (Piece->color == White) ? (endRow - 1) : (endRow + 1);
+                int capCol = endCol;
+
+                delete board[capRow][capCol];
+                board[capRow][capCol] = new Empty(EMPTY, None, capRow, capCol);
             }
             if (Piece->color == White) {
                 isWhiteTurn = false;
@@ -817,11 +820,10 @@ class Board {
             removeEnpassant();
             if (Piece->piece == PAWN) {
                 struct Pawn* pawn = dynamic_cast<struct Pawn*>(Piece);
-                if(pawn->color == White && target->row == 3 && pawn->row == 1) {
-                    board[2][pawn->col] -> enPassantSquare = true;
-                } else if (pawn->color == Black && target->row == 4 && pawn->row == 6) {
-                    board[5][pawn->col] -> enPassantSquare = true;
-                } 
+                if (Piece->piece == PAWN && std::abs(endRow - startRow) == 2) {
+                    int epRow = (startRow + endRow) / 2;
+                    board[epRow][endCol]->enPassantSquare = true;
+                }
             }
 
             handleMove(startRow, startCol, endRow, endCol);
@@ -891,8 +893,7 @@ class Board {
             }
 
             positionCount[getPosition()]++;
-            checkForCheckmate(White);
-            checkForCheckmate(Black);
+            checkForCheckmate(isWhiteTurn ? White : Black);
             checkForDraw();
         }
 
@@ -991,6 +992,12 @@ class Board {
         }
 
         void checkForCheckmate(Color color) {
+            whiteKingisCheckmated = false;
+            blackKingisCheckmated = false;
+            isStalemate = false;
+            isGameOver = false;
+            isGameDraw = false;
+            gameOverMessage = "";
             for(int i = 0; i < 8; i++) {
                 for(int j = 0; j < 8; j++) {
                     if (board[i][j]->piece == KING && isinCheck(i, j) && board[i][j]->color == color) {
@@ -1019,11 +1026,11 @@ class Board {
                                 }
                             }
                         }
-                        if(color == White && !hasLegalMoves) {
+                        if(color == White && !hasLegalMoves && isWhiteTurn) {
                             isStalemate = true;
                             break;
                         }
-                        if(color == Black && !hasLegalMoves) {
+                        if(color == Black && !hasLegalMoves && !isWhiteTurn) {
                             isStalemate = true;
                             break;
                         }
@@ -1302,7 +1309,7 @@ class Board {
             King* king = static_cast<King*>(kingPiece);
             Rook* rook = static_cast<Rook*>(rookPiece);
             if (king->hasCastlingRights && rook->hasCastlingRights
-            && !isinCheckSquare(king->color, king->row, rook->col) &&
+            && /*!isinCheckSquare(king->color, king->row, rook->col) &&*/
              notThroughCheck(kingRow, kingCol, rookRow, rookCol) && 
              isNotBlockedForCastle(kingRow, kingCol, rookRow, rookCol)) {
                 return true;
@@ -1363,13 +1370,13 @@ class Board {
                 return false;
             }
             if (rook -> col == 7) {
-                for(int j = 4; j <= 7; j++) {
+                for(int j = 4; j <= 6; j++) {
                     if (isinCheckSquare(king->color, king->row, j)) {
                         return false;
                     }
                 }
             } else {
-                for(int j = 0; j <= 4; j++) {
+                for(int j = 2; j <= 4; j++) {
                     if (isinCheckSquare(king->color, king->row, j)) {
                         return false;
                     }

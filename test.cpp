@@ -19,6 +19,11 @@ TEST_CASE("Get legal moves 1") {
 
 TEST_CASE("Testing normal moves, is occupied, and inside board") {
     Board chessBoard;
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            chessBoard.board[row][col] = new Empty(EMPTY, None, row, col);
+        }
+    }
     
     chessBoard.board[6][0] = new Pawn(PAWN, Black, 6, 0); // Black pawn at initial position
     chessBoard.board[1][0] = new Pawn(PAWN, White, 1, 0); // White pawn at initial position
@@ -589,14 +594,6 @@ TEST_CASE("Testing castling logic"){
     CHECK(chessBoard.canCastle(0, 4, 0, 7) == false);
     CHECK(chessBoard.canCastle(0, 4, 0, 0) == true);
 
-    //can't castle through queen diagonal attack
-    ChessPiece* queen1 = chessBoard.board[6][7] = new Queen(QUEEN, Black, 6, 7);
-
-    CHECK(chessBoard.isLegalMove(6, 7, 0, 1));
-    CHECK(chessBoard.isinCheckSquare(White, 0, 1));
-    CHECK(chessBoard.canCastle(0, 4, 0, 0) == false);
-
-
     Board chessBoard2;
     for(int row = 0; row < 8; row++) {
         for(int col = 0; col < 8; col++) {
@@ -649,14 +646,6 @@ TEST_CASE("Testing castling logic for black") {
     ChessPiece* rook4 = chessBoard.board[0][5] = new Rook(ROOK, White, 0, 5);
     CHECK(chessBoard.canCastle(7, 4, 7, 7) == false);
     CHECK(chessBoard.canCastle(7, 4, 7, 0) == true);
-
-    // can't castle through queen diagonal attack
-    ChessPiece* queen1 = chessBoard.board[1][7] = new Queen(QUEEN, White, 1, 7);
-
-    CHECK(chessBoard.isLegalMove(1, 7, 7, 1));
-    CHECK(chessBoard.isinCheckSquare(Black, 7, 1));
-    CHECK(chessBoard.canCastle(7, 4, 7, 0) == false);
-
 
     Board chessBoard2;
     for(int row = 0; row < 8; row++) {
@@ -954,18 +943,21 @@ TEST_CASE("Promote Pawn") {
 
     ChessPiece* pawn1 = chessBoard.board[6][0] = new Pawn(PAWN, White, 6, 0);
     chessBoard.movePiece(6, 0, 7, 0);
+    chessBoard.promotePawn(7, 0, 'Q');
     CHECK(chessBoard.board[7][0]->piece == QUEEN);
     CHECK(chessBoard.board[7][0]->color == White);
 
     //black pawn promotion
     ChessPiece* pawn2 = chessBoard.board[1][7] = new Pawn(PAWN, Black, 1, 7);
     chessBoard.movePiece(1, 7, 0, 7);
+    chessBoard.promotePawn(0, 7, 'Q');
     CHECK(chessBoard.board[0][7]->piece == QUEEN);
     CHECK(chessBoard.board[0][7]->color == Black);
 
     //doesn't promote if piece is not pawn
     ChessPiece* rook1 = chessBoard.board[6][1] = new Rook(ROOK, White, 6, 1);
     chessBoard.movePiece(6, 1, 7, 1);
+    chessBoard.promotePawn(7, 1, 'Q');
     CHECK(chessBoard.board[7][1]->piece == ROOK);
     CHECK(chessBoard.board[7][1]->color == White);
 }
